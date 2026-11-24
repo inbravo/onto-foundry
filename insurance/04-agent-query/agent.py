@@ -22,11 +22,11 @@ ROOT     = Path(__file__).resolve().parents[2]
 TTL      = ROOT / "insurance" / "03-context-graph" / "insurance-context.ttl"
 SCHEMA   = ROOT / "insurance" / "02-ontology" / "insurance.ttl"
 
-PREFIXES = """\
-PREFIX ins:  <http://ontology-foundry.io/insurance#>
-PREFIX data: <http://ontology-foundry.io/insurance/data#>
-PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
-"""
+PREFIXES = (
+    "PREFIX ins:  <http://ontology-foundry.io/insurance#>\n"
+    "PREFIX data: <http://ontology-foundry.io/insurance/data#>\n"
+    "PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>\n"
+)
 
 # ── startup checks ────────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ def _check_model() -> None:
         names = "\n  ".join(available)
         print(f"Model '{MODEL}' not found.\nInstalled:\n  {names}\nrun: ollama pull {MODEL}")
         sys.exit(1)
-    MODEL = base_map.get(MODEL, MODEL)  # "qwen2.5" → "qwen2.5:latest"
+    MODEL = base_map.get(MODEL, MODEL)  # "qwen2.5" -> "qwen2.5:latest"
 
 
 def load_graph() -> Graph:
@@ -51,9 +51,7 @@ def load_graph() -> Graph:
     return g
 
 
-# ── tool definition ───────────────────────────────────────────────────────────
-# Schema is injected into the system prompt so local models don't need to
-# call a separate schema-fetch tool before they can write SPARQL.
+# ── tool ──────────────────────────────────────────────────────────────────────
 
 TOOLS = [
     {
@@ -61,14 +59,14 @@ TOOLS = [
         "function": {
             "name": "run_sparql",
             "description": (
-                "Executes a SPARQL SELECT query against the insurance context graph. "
+                "Execute a SPARQL SELECT query against the insurance context graph. "
                 "Returns rows as a JSON list of dicts. "
-                "Standard prefixes ins:, data:, xsd: are already available."
+                "Prefixes ins:, data:, xsd: are injected automatically — do not redeclare them."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {"type": "string", "description": "A valid SPARQL SELECT query."}
+                    "query": {"type": "string", "description": "SPARQL SELECT query body only (no PREFIX lines)."}
                 },
                 "required": ["query"],
             },
@@ -76,7 +74,6 @@ TOOLS = [
     },
 ]
 
-# ── tool implementation ───────────────────────────────────────────────────────
 
 def run_sparql(graph: Graph, query: str) -> str:
     full_query = PREFIXES + "\n" + query
@@ -91,20 +88,60 @@ def run_sparql(graph: Graph, query: str) -> str:
         return json.dumps({"error": str(exc)})
 
 
-# ── agent loop ────────────────────────────────────────────────────────────────
+# ── system prompt ─────────────────────────────────────────────────────────────
+
+_URI_GUIDE = (
+    "URI reference — use these exact URIs in triple patterns, never string labels:\n"
+    "  Lines:    ins:LoB_Marine  ins:LoB_Property  ins:LoB_Liability  ins:LoB_Motor\n"
+    "  Variants: ins:LRV_Paid  ins:LRV_Incurred  ins:LRV_Ultimate  ins:LRV_Attritional\n"
+    '  Period:   literal string "2026-Q3"\n'
+)
+
+_EXAMPLES = (
+    "Example 1 — incurred LR for Marine Q3 2026:\n"
+    "  SELECT ?ratio WHERE {\n"
+    "    ?rec a ins:LossRatioRecord ;\n"
+    '         ins:period     "2026-Q3" ;\n'
+    "         ins:forLine    ins:LoB_Marine ;\n"
+    "         ins:measuredAs ins:LRV_Incurred ;\n"
+    "         ins:ratioValue ?ratio .\n"
+    "  }\n"
+    "\n"
+    "Example 2 — all Q3 2026 ultimate ratios, highest first:\n"
+    "  SELECT ?line ?ratio WHERE {\n"
+    "    ?rec a ins:LossRatioRecord ;\n"
+    '         ins:period     "2026-Q3" ;\n'
+    "         ins:measuredAs ins:LRV_Ultimate ;\n"
+    "         ins:forLine    ?line ;\n"
+    "         ins:ratioValue ?ratio .\n"
+    "  } ORDER BY DESC(?ratio)\n"
+    "\n"
+    "Example 3 — open claims with paid loss:\n"
+    "  SELECT ?claimId ?paid WHERE {\n"
+    "    ?c a ins:Claim ;\n"
+    '       ins:claimStatus "Open" ;\n'
+    "       ins:claimId     ?claimId ;\n"
+    "       ins:paidLoss    ?paid .\n"
+    "  }\n"
+)
+
 
 def _system_prompt() -> str:
     schema = SCHEMA.read_text()
-    return f"""\
-You are an insurance analytics agent. Use the run_sparql tool to answer questions.
-Incurred LR = (paid loss + case reserve) / earned premium.
-Ultimate LR adds IBNR to the numerator.
-Express ratios as percentages rounded to one decimal place.
+    parts = [
+        "You are an insurance analytics agent. Use run_sparql to answer questions.",
+        "Incurred LR = (paid + case reserve) / earned premium.",
+        "Ultimate LR adds IBNR. Express ratios as percentages to one decimal place.",
+        "",
+        _URI_GUIDE,
+        _EXAMPLES,
+        "Ontology (Turtle):",
+        schema,
+    ]
+    return "\n".join(parts)
 
-Ontology (use these URIs in your SPARQL queries):
-{schema}
-"""
 
+# ── agent loop ────────────────────────────────────────────────────────────────
 
 def ask(question: str, graph: Graph) -> str:
     messages = [
