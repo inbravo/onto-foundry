@@ -30,6 +30,7 @@ PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 # ── graph ─────────────────────────────────────────────────────────────────────
 
 def _check_model() -> None:
+    global MODEL
     # Ollama tags models as "name:tag"; match on base name
     models    = ollama.list().models
     available = [m.model for m in models]
@@ -38,8 +39,7 @@ def _check_model() -> None:
         names = "\n  ".join(available)
         print(f"Model '{MODEL}' not found.\nInstalled:\n  {names}\nSet MODEL at top of agent.py or run: ollama pull {MODEL}")
         sys.exit(1)
-    global MODEL
-    MODEL = base_map.get(MODEL, MODEL)  # expand to full tag if needed
+    MODEL = base_map.get(MODEL, MODEL)  # expand "qwen2.5" → "qwen2.5:latest"
 
 
 def load_graph() -> Graph:
