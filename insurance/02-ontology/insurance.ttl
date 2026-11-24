@@ -1,0 +1,131 @@
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix ins:  <http://ontology-foundry.io/insurance#> .
+
+# ── Ontology declaration ──────────────────────────────────────────────────────
+
+ins: a owl:Ontology ;
+    rdfs:label "Insurance Core Ontology" ;
+    rdfs:comment "OWL 2 ontology for loss ratio analysis. Wave 1." .
+
+# ── Classes ───────────────────────────────────────────────────────────────────
+
+ins:Party a owl:Class ;
+    rdfs:label "Party" ;
+    skos:definition "Any legal or natural person in an insurance contract." .
+
+ins:Policy a owl:Class ;
+    rdfs:label "Policy" ;
+    skos:definition "A contract of insurance between an insurer and an insured." .
+
+ins:Claim a owl:Class ;
+    rdfs:label "Claim" ;
+    skos:definition "A formal request for payment under a policy." .
+
+ins:LossRatioRecord a owl:Class ;
+    rdfs:label "LossRatioRecord" ;
+    skos:definition "Computed loss ratio for a line-of-business / period cohort." .
+
+ins:LineOfBusiness a owl:Class ;
+    rdfs:label "LineOfBusiness" .
+
+ins:LossRatioVariant a owl:Class ;
+    rdfs:label "LossRatioVariant" ;
+    skos:definition "Distinguishes how losses and premiums are measured." .
+
+# ── Object properties ─────────────────────────────────────────────────────────
+
+ins:hasInsured a owl:ObjectProperty ;
+    rdfs:domain ins:Policy ;
+    rdfs:range  ins:Party ;
+    rdfs:label "hasInsured" .
+
+ins:coveredBy a owl:ObjectProperty ;
+    rdfs:domain ins:Claim ;
+    rdfs:range  ins:Policy ;
+    rdfs:label "coveredBy" .
+
+ins:hasLoBusiness a owl:ObjectProperty ;
+    rdfs:domain ins:Policy ;
+    rdfs:range  ins:LineOfBusiness ;
+    rdfs:label "hasLoBusiness" .
+
+ins:measuredAs a owl:ObjectProperty ;
+    rdfs:domain ins:LossRatioRecord ;
+    rdfs:range  ins:LossRatioVariant ;
+    rdfs:label "measuredAs" .
+
+ins:forLine a owl:ObjectProperty ;
+    rdfs:domain ins:LossRatioRecord ;
+    rdfs:range  ins:LineOfBusiness ;
+    rdfs:label "forLine" .
+
+# ── Datatype properties ───────────────────────────────────────────────────────
+
+ins:policyId        a owl:DatatypeProperty ; rdfs:domain ins:Policy         ; rdfs:range xsd:string .
+ins:earnedPremium   a owl:DatatypeProperty ; rdfs:domain ins:Policy         ; rdfs:range xsd:decimal .
+ins:inceptionDate   a owl:DatatypeProperty ; rdfs:domain ins:Policy         ; rdfs:range xsd:date .
+
+ins:claimId         a owl:DatatypeProperty ; rdfs:domain ins:Claim          ; rdfs:range xsd:string .
+ins:paidLoss        a owl:DatatypeProperty ; rdfs:domain ins:Claim          ; rdfs:range xsd:decimal .
+ins:caseReserve     a owl:DatatypeProperty ; rdfs:domain ins:Claim          ; rdfs:range xsd:decimal .
+ins:ibnrReserve     a owl:DatatypeProperty ; rdfs:domain ins:Claim          ; rdfs:range xsd:decimal .
+ins:claimStatus     a owl:DatatypeProperty ; rdfs:domain ins:Claim          ; rdfs:range xsd:string .
+
+ins:period          a owl:DatatypeProperty ; rdfs:domain ins:LossRatioRecord ; rdfs:range xsd:string .
+ins:numerator       a owl:DatatypeProperty ; rdfs:domain ins:LossRatioRecord ; rdfs:range xsd:decimal .
+ins:denominator     a owl:DatatypeProperty ; rdfs:domain ins:LossRatioRecord ; rdfs:range xsd:decimal .
+ins:ratioValue      a owl:DatatypeProperty ; rdfs:domain ins:LossRatioRecord ; rdfs:range xsd:decimal .
+
+# ── SKOS concept scheme — LineOfBusiness ─────────────────────────────────────
+
+ins:LoB_Marine      a ins:LineOfBusiness ; skos:prefLabel "Marine" .
+ins:LoB_Property    a ins:LineOfBusiness ; skos:prefLabel "Property" .
+ins:LoB_Liability   a ins:LineOfBusiness ; skos:prefLabel "Liability" .
+ins:LoB_Motor       a ins:LineOfBusiness ; skos:prefLabel "Motor" .
+
+# ── SKOS concept scheme — LossRatioVariant ───────────────────────────────────
+
+ins:LRV_Paid        a ins:LossRatioVariant ;
+    skos:prefLabel "Paid" ;
+    skos:definition "Paid losses ÷ earned premium." .
+
+ins:LRV_Incurred    a ins:LossRatioVariant ;
+    skos:prefLabel "Incurred" ;
+    skos:definition "(Paid + case reserve) ÷ earned premium." .
+
+ins:LRV_Ultimate    a ins:LossRatioVariant ;
+    skos:prefLabel "Ultimate" ;
+    skos:definition "(Incurred + IBNR) ÷ earned premium." .
+
+ins:LRV_Attritional a ins:LossRatioVariant ;
+    skos:prefLabel "Attritional" ;
+    skos:definition "Excludes catastrophe events." .
+
+ins:LRV_Net         a ins:LossRatioVariant ;
+    skos:prefLabel "Net" ;
+    skos:definition "After reinsurance recovery." .
+
+# ── SHACL shapes ─────────────────────────────────────────────────────────────
+
+ins:PolicyShape a sh:NodeShape ;
+    sh:targetClass ins:Policy ;
+    sh:property [ sh:path ins:earnedPremium ; sh:minCount 1 ; sh:datatype xsd:decimal ] ;
+    sh:property [ sh:path ins:hasLoBusiness ; sh:minCount 1 ] .
+
+ins:ClaimShape a sh:NodeShape ;
+    sh:targetClass ins:Claim ;
+    sh:property [ sh:path ins:coveredBy    ; sh:minCount 1 ] ;
+    sh:property [ sh:path ins:paidLoss     ; sh:minCount 1 ; sh:datatype xsd:decimal ] ;
+    sh:property [ sh:path ins:caseReserve  ; sh:minCount 1 ; sh:datatype xsd:decimal ] .
+
+ins:LossRatioShape a sh:NodeShape ;
+    sh:targetClass ins:LossRatioRecord ;
+    sh:property [ sh:path ins:period      ; sh:minCount 1 ] ;
+    sh:property [ sh:path ins:ratioValue  ; sh:minCount 1 ; sh:datatype xsd:decimal ] ;
+    sh:property [ sh:path ins:measuredAs  ; sh:minCount 1 ] ;
+    sh:property [ sh:path ins:forLine     ; sh:minCount 1 ] .

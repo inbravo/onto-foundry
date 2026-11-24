@@ -1,0 +1,4 @@
+rdflib>=7.0
+owlready2>=0.46
+anthropic>=0.40
+pyshacl>=0.25     # optional — SHACL validation in build_graph.py

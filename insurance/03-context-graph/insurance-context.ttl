@@ -1,0 +1,319 @@
+@prefix ins: <http://ontology-foundry.io/insurance#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ins: a owl:Ontology ;
+    rdfs:label "Insurance Core Ontology" ;
+    rdfs:comment "OWL 2 ontology for loss ratio analysis. Wave 1." .
+
+ins:ClaimShape a sh:NodeShape ;
+    sh:property [ sh:minCount 1 ;
+            sh:path ins:coveredBy ],
+        [ sh:datatype xsd:decimal ;
+            sh:minCount 1 ;
+            sh:path ins:paidLoss ],
+        [ sh:datatype xsd:decimal ;
+            sh:minCount 1 ;
+            sh:path ins:caseReserve ] ;
+    sh:targetClass ins:Claim .
+
+ins:LRV_Attritional a ins:LossRatioVariant ;
+    skos:definition "Excludes catastrophe events." ;
+    skos:prefLabel "Attritional" .
+
+ins:LRV_Net a ins:LossRatioVariant ;
+    skos:definition "After reinsurance recovery." ;
+    skos:prefLabel "Net" .
+
+ins:LoB_Motor a ins:LineOfBusiness ;
+    skos:prefLabel "Motor" .
+
+ins:LossRatioShape a sh:NodeShape ;
+    sh:property [ sh:minCount 1 ;
+            sh:path ins:period ],
+        [ sh:datatype xsd:decimal ;
+            sh:minCount 1 ;
+            sh:path ins:ratioValue ],
+        [ sh:minCount 1 ;
+            sh:path ins:measuredAs ],
+        [ sh:minCount 1 ;
+            sh:path ins:forLine ] ;
+    sh:targetClass ins:LossRatioRecord .
+
+ins:PolicyShape a sh:NodeShape ;
+    sh:property [ sh:datatype xsd:decimal ;
+            sh:minCount 1 ;
+            sh:path ins:earnedPremium ],
+        [ sh:minCount 1 ;
+            sh:path ins:hasLoBusiness ] ;
+    sh:targetClass ins:Policy .
+
+ins:claimId a owl:DatatypeProperty ;
+    rdfs:domain ins:Claim ;
+    rdfs:range xsd:string .
+
+ins:claimStatus a owl:DatatypeProperty ;
+    rdfs:domain ins:Claim ;
+    rdfs:range xsd:string .
+
+ins:denominator a owl:DatatypeProperty ;
+    rdfs:domain ins:LossRatioRecord ;
+    rdfs:range xsd:decimal .
+
+ins:hasInsured a owl:ObjectProperty ;
+    rdfs:label "hasInsured" ;
+    rdfs:domain ins:Policy ;
+    rdfs:range ins:Party .
+
+ins:ibnrReserve a owl:DatatypeProperty ;
+    rdfs:domain ins:Claim ;
+    rdfs:range xsd:decimal .
+
+ins:inceptionDate a owl:DatatypeProperty ;
+    rdfs:domain ins:Policy ;
+    rdfs:range xsd:date .
+
+ins:numerator a owl:DatatypeProperty ;
+    rdfs:domain ins:LossRatioRecord ;
+    rdfs:range xsd:decimal .
+
+ins:policyId a owl:DatatypeProperty ;
+    rdfs:domain ins:Policy ;
+    rdfs:range xsd:string .
+
+<http://ontology-foundry.io/insurance/data#CLM-001> a ins:Claim ;
+    ins:caseReserve 80000.0 ;
+    ins:claimId "CLM-001" ;
+    ins:claimStatus "Open" ;
+    ins:coveredBy <http://ontology-foundry.io/insurance/data#POL-MAR-001> ;
+    ins:ibnrReserve 0.0 ;
+    ins:paidLoss 320000.0 .
+
+<http://ontology-foundry.io/insurance/data#CLM-002> a ins:Claim ;
+    ins:caseReserve 0.0 ;
+    ins:claimId "CLM-002" ;
+    ins:claimStatus "Closed" ;
+    ins:coveredBy <http://ontology-foundry.io/insurance/data#POL-MAR-001> ;
+    ins:ibnrReserve 0.0 ;
+    ins:paidLoss 150000.0 .
+
+<http://ontology-foundry.io/insurance/data#CLM-003> a ins:Claim ;
+    ins:caseReserve 55000.0 ;
+    ins:claimId "CLM-003" ;
+    ins:claimStatus "Open" ;
+    ins:coveredBy <http://ontology-foundry.io/insurance/data#POL-MAR-002> ;
+    ins:ibnrReserve 30000.0 ;
+    ins:paidLoss 95000.0 .
+
+<http://ontology-foundry.io/insurance/data#CLM-004> a ins:Claim ;
+    ins:caseReserve 400000.0 ;
+    ins:claimId "CLM-004" ;
+    ins:claimStatus "Open" ;
+    ins:coveredBy <http://ontology-foundry.io/insurance/data#POL-PRP-001> ;
+    ins:ibnrReserve 0.0 ;
+    ins:paidLoss 800000.0 .
+
+<http://ontology-foundry.io/insurance/data#CLM-005> a ins:Claim ;
+    ins:caseReserve 0.0 ;
+    ins:claimId "CLM-005" ;
+    ins:claimStatus "IBNR" ;
+    ins:coveredBy <http://ontology-foundry.io/insurance/data#POL-LIB-001> ;
+    ins:ibnrReserve 120000.0 ;
+    ins:paidLoss 0.0 .
+
+<http://ontology-foundry.io/insurance/data#LR-Liability-2026Q3-Incurred> a ins:LossRatioRecord ;
+    ins:denominator 450000.00 ;
+    ins:forLine ins:LoB_Liability ;
+    ins:measuredAs ins:LRV_Incurred ;
+    ins:numerator 0.0 ;
+    ins:period "2026-Q3" ;
+    ins:ratioValue 0.0000 .
+
+<http://ontology-foundry.io/insurance/data#LR-Liability-2026Q3-Paid> a ins:LossRatioRecord ;
+    ins:denominator 450000.00 ;
+    ins:forLine ins:LoB_Liability ;
+    ins:measuredAs ins:LRV_Paid ;
+    ins:numerator 0.0 ;
+    ins:period "2026-Q3" ;
+    ins:ratioValue 0.0000 .
+
+<http://ontology-foundry.io/insurance/data#LR-Liability-2026Q3-Ultimate> a ins:LossRatioRecord ;
+    ins:denominator 450000.00 ;
+    ins:forLine ins:LoB_Liability ;
+    ins:measuredAs ins:LRV_Ultimate ;
+    ins:numerator 120000.0 ;
+    ins:period "2026-Q3" ;
+    ins:ratioValue 0.2667 .
+
+<http://ontology-foundry.io/insurance/data#LR-Marine-2026Q3-Incurred> a ins:LossRatioRecord ;
+    ins:denominator 1500000.00 ;
+    ins:forLine ins:LoB_Marine ;
+    ins:measuredAs ins:LRV_Incurred ;
+    ins:numerator 700000.0 ;
+    ins:period "2026-Q3" ;
+    ins:ratioValue 0.4667 .
+
+<http://ontology-foundry.io/insurance/data#LR-Marine-2026Q3-Paid> a ins:LossRatioRecord ;
+    ins:denominator 1500000.00 ;
+    ins:forLine ins:LoB_Marine ;
+    ins:measuredAs ins:LRV_Paid ;
+    ins:numerator 565000.0 ;
+    ins:period "2026-Q3" ;
+    ins:ratioValue 0.3767 .
+
+<http://ontology-foundry.io/insurance/data#LR-Marine-2026Q3-Ultimate> a ins:LossRatioRecord ;
+    ins:denominator 1500000.00 ;
+    ins:forLine ins:LoB_Marine ;
+    ins:measuredAs ins:LRV_Ultimate ;
+    ins:numerator 730000.0 ;
+    ins:period "2026-Q3" ;
+    ins:ratioValue 0.4867 .
+
+<http://ontology-foundry.io/insurance/data#LR-Property-2026Q3-Incurred> a ins:LossRatioRecord ;
+    ins:denominator 1875000.00 ;
+    ins:forLine ins:LoB_Property ;
+    ins:measuredAs ins:LRV_Incurred ;
+    ins:numerator 1200000.0 ;
+    ins:period "2026-Q3" ;
+    ins:ratioValue 0.6400 .
+
+<http://ontology-foundry.io/insurance/data#LR-Property-2026Q3-Paid> a ins:LossRatioRecord ;
+    ins:denominator 1875000.00 ;
+    ins:forLine ins:LoB_Property ;
+    ins:measuredAs ins:LRV_Paid ;
+    ins:numerator 800000.0 ;
+    ins:period "2026-Q3" ;
+    ins:ratioValue 0.4267 .
+
+<http://ontology-foundry.io/insurance/data#LR-Property-2026Q3-Ultimate> a ins:LossRatioRecord ;
+    ins:denominator 1875000.00 ;
+    ins:forLine ins:LoB_Property ;
+    ins:measuredAs ins:LRV_Ultimate ;
+    ins:numerator 1200000.0 ;
+    ins:period "2026-Q3" ;
+    ins:ratioValue 0.6400 .
+
+ins:caseReserve a owl:DatatypeProperty ;
+    rdfs:domain ins:Claim ;
+    rdfs:range xsd:decimal .
+
+ins:coveredBy a owl:ObjectProperty ;
+    rdfs:label "coveredBy" ;
+    rdfs:domain ins:Claim ;
+    rdfs:range ins:Policy .
+
+ins:earnedPremium a owl:DatatypeProperty ;
+    rdfs:domain ins:Policy ;
+    rdfs:range xsd:decimal .
+
+ins:forLine a owl:ObjectProperty ;
+    rdfs:label "forLine" ;
+    rdfs:domain ins:LossRatioRecord ;
+    rdfs:range ins:LineOfBusiness .
+
+ins:hasLoBusiness a owl:ObjectProperty ;
+    rdfs:label "hasLoBusiness" ;
+    rdfs:domain ins:Policy ;
+    rdfs:range ins:LineOfBusiness .
+
+ins:measuredAs a owl:ObjectProperty ;
+    rdfs:label "measuredAs" ;
+    rdfs:domain ins:LossRatioRecord ;
+    rdfs:range ins:LossRatioVariant .
+
+ins:paidLoss a owl:DatatypeProperty ;
+    rdfs:domain ins:Claim ;
+    rdfs:range xsd:decimal .
+
+ins:period a owl:DatatypeProperty ;
+    rdfs:domain ins:LossRatioRecord ;
+    rdfs:range xsd:string .
+
+ins:ratioValue a owl:DatatypeProperty ;
+    rdfs:domain ins:LossRatioRecord ;
+    rdfs:range xsd:decimal .
+
+<http://ontology-foundry.io/insurance/data#P-INS-02> a ins:Party ;
+    ins:policyId "P-INS-02" .
+
+<http://ontology-foundry.io/insurance/data#P-INS-03> a ins:Party ;
+    ins:policyId "P-INS-03" .
+
+<http://ontology-foundry.io/insurance/data#POL-LIB-001> a ins:Policy ;
+    ins:earnedPremium 600000.0 ;
+    ins:hasInsured <http://ontology-foundry.io/insurance/data#P-INS-03> ;
+    ins:hasLoBusiness ins:LoB_Liability ;
+    ins:inceptionDate "2026-01-01"^^xsd:date ;
+    ins:policyId "POL-LIB-001" .
+
+<http://ontology-foundry.io/insurance/data#POL-MAR-002> a ins:Policy ;
+    ins:earnedPremium 800000.0 ;
+    ins:hasInsured <http://ontology-foundry.io/insurance/data#P-INS-01> ;
+    ins:hasLoBusiness ins:LoB_Marine ;
+    ins:inceptionDate "2026-04-01"^^xsd:date ;
+    ins:policyId "POL-MAR-002" .
+
+<http://ontology-foundry.io/insurance/data#POL-PRP-001> a ins:Policy ;
+    ins:earnedPremium 2500000.0 ;
+    ins:hasInsured <http://ontology-foundry.io/insurance/data#P-INS-02> ;
+    ins:hasLoBusiness ins:LoB_Property ;
+    ins:inceptionDate "2026-01-01"^^xsd:date ;
+    ins:policyId "POL-PRP-001" .
+
+<http://ontology-foundry.io/insurance/data#P-INS-01> a ins:Party ;
+    ins:policyId "P-INS-01" .
+
+<http://ontology-foundry.io/insurance/data#POL-MAR-001> a ins:Policy ;
+    ins:earnedPremium 1200000.0 ;
+    ins:hasInsured <http://ontology-foundry.io/insurance/data#P-INS-01> ;
+    ins:hasLoBusiness ins:LoB_Marine ;
+    ins:inceptionDate "2026-01-01"^^xsd:date ;
+    ins:policyId "POL-MAR-001" .
+
+ins:LRV_Incurred a ins:LossRatioVariant ;
+    skos:definition "(Paid + case reserve) ÷ earned premium." ;
+    skos:prefLabel "Incurred" .
+
+ins:LRV_Paid a ins:LossRatioVariant ;
+    skos:definition "Paid losses ÷ earned premium." ;
+    skos:prefLabel "Paid" .
+
+ins:LRV_Ultimate a ins:LossRatioVariant ;
+    skos:definition "(Incurred + IBNR) ÷ earned premium." ;
+    skos:prefLabel "Ultimate" .
+
+ins:LoB_Liability a ins:LineOfBusiness ;
+    skos:prefLabel "Liability" .
+
+ins:LoB_Property a ins:LineOfBusiness ;
+    skos:prefLabel "Property" .
+
+ins:Party a owl:Class ;
+    rdfs:label "Party" ;
+    skos:definition "Any legal or natural person in an insurance contract." .
+
+ins:LoB_Marine a ins:LineOfBusiness ;
+    skos:prefLabel "Marine" .
+
+ins:LineOfBusiness a owl:Class ;
+    rdfs:label "LineOfBusiness" .
+
+ins:LossRatioVariant a owl:Class ;
+    rdfs:label "LossRatioVariant" ;
+    skos:definition "Distinguishes how losses and premiums are measured." .
+
+ins:Policy a owl:Class ;
+    rdfs:label "Policy" ;
+    skos:definition "A contract of insurance between an insurer and an insured." .
+
+ins:Claim a owl:Class ;
+    rdfs:label "Claim" ;
+    skos:definition "A formal request for payment under a policy." .
+
+ins:LossRatioRecord a owl:Class ;
+    rdfs:label "LossRatioRecord" ;
+    skos:definition "Computed loss ratio for a line-of-business / period cohort." .
+
