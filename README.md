@@ -26,13 +26,49 @@ Domain model → ontology → context graph → agent query, by industry vertica
 04-agent-query/    agent.py   — Ollama tool-call: NL → SPARQL → answer
 ```
 
-## Setup
+## Ollama
 
-Requires [Ollama](https://ollama.com) running locally. Pull a tool-capable model first:
+### Install
 
 ```bash
-ollama pull qwen2.5
+brew install ollama        # macOS
 ```
+
+For Linux or Windows: [ollama.com/download](https://ollama.com/download).
+
+### Start the server
+
+```bash
+ollama serve
+```
+
+Runs in the foreground and prints live logs to the terminal. Keep this open while running the agent.
+
+To run as a background service on macOS:
+
+```bash
+brew services start ollama
+brew services stop ollama
+```
+
+### View logs
+
+| Method | Command |
+|--------|---------|
+| Live (foreground) | `ollama serve` |
+| macOS service logs | `tail -f ~/.ollama/logs/server.log` |
+| Debug mode | `OLLAMA_DEBUG=1 ollama serve` |
+| Linux systemd | `journalctl -u ollama -f` |
+
+### Pull a model
+
+```bash
+ollama pull qwen2.5        # recommended — good tool-call support
+ollama pull llama3.1       # alternative
+ollama list                # see what's installed
+```
+
+## Setup
 
 ### Using Make
 
