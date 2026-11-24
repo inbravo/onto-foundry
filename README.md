@@ -31,7 +31,7 @@ Domain model → ontology → context graph → agent query, by industry vertica
 Requires [Ollama](https://ollama.com) running locally with a tool-capable model:
 
 ```bash
-ollama pull llama3.2
+ollama pull qwen2.5
 ```
 
 ```bash
@@ -47,4 +47,4 @@ To ask a custom question:
 ```
 
 To change the model, edit `MODEL` at the top of `insurance/04-agent-query/agent.py`.
-Models known to support tool calls: `llama3.2`, `qwen2.5`, `mistral-nemo`.
+Models known to support tool calls: `qwen2.5`, `llama3.1`, `mistral-nemo`.

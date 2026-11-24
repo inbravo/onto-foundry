@@ -16,7 +16,7 @@ from rdflib import Graph
 
 # ── config ────────────────────────────────────────────────────────────────────
 
-MODEL   = "llama3.2"          # swap for qwen2.5, mistral-nemo, etc.
+MODEL   = "qwen2.5"           # swap for llama3.1, mistral-nemo, etc.
 ROOT    = Path(__file__).resolve().parents[2]
 TTL     = ROOT / "insurance" / "03-context-graph" / "insurance-context.ttl"
 SCHEMA  = ROOT / "insurance" / "02-ontology" / "insurance.ttl"
@@ -28,6 +28,19 @@ PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 """
 
 # ── graph ─────────────────────────────────────────────────────────────────────
+
+def _check_model() -> None:
+    # Ollama tags models as "name:tag"; match on base name
+    models    = ollama.list().models
+    available = [m.model for m in models]
+    base_map  = {m.model.split(":")[0]: m.model for m in models}
+    if MODEL not in available and MODEL not in base_map:
+        names = "\n  ".join(available)
+        print(f"Model '{MODEL}' not found.\nInstalled:\n  {names}\nSet MODEL at top of agent.py or run: ollama pull {MODEL}")
+        sys.exit(1)
+    global MODEL
+    MODEL = base_map.get(MODEL, MODEL)  # expand to full tag if needed
+
 
 def load_graph() -> Graph:
     if not TTL.exists():
@@ -153,6 +166,7 @@ DEMO_QUESTIONS = [
 ]
 
 if __name__ == "__main__":
+    _check_model()
     graph = load_graph()
     questions = sys.argv[1:] or DEMO_QUESTIONS
 
