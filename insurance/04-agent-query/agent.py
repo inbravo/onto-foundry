@@ -1,71 +1,83 @@
 """
-Claude tool-call agent: NL question → SPARQL over insurance context graph → answer.
+Ollama tool-call agent: NL question → SPARQL over insurance context graph → answer.
+Requires a locally running Ollama instance with a tool-capable model.
 
-Run:  ANTHROPIC_API_KEY=... python insurance/04-agent-query/agent.py
+Run:  make run
+  or: .venv/bin/python insurance/04-agent-query/agent.py
 """
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 
-import anthropic
+import ollama
 from rdflib import Graph
 
-# ── paths ─────────────────────────────────────────────────────────────────────
+# ── config ────────────────────────────────────────────────────────────────────
 
+MODEL   = "llama3.2"          # swap for qwen2.5, mistral-nemo, etc.
 ROOT    = Path(__file__).resolve().parents[2]
 TTL     = ROOT / "insurance" / "03-context-graph" / "insurance-context.ttl"
 SCHEMA  = ROOT / "insurance" / "02-ontology" / "insurance.ttl"
 
-INS_PREFIX = "PREFIX ins: <http://ontology-foundry.io/insurance#>"
-DATA_PREFIX = "PREFIX data: <http://ontology-foundry.io/insurance/data#>"
-PREFIXES = f"{INS_PREFIX}\n{DATA_PREFIX}\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
-
+PREFIXES = """\
+PREFIX ins:  <http://ontology-foundry.io/insurance#>
+PREFIX data: <http://ontology-foundry.io/insurance/data#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+"""
 
 # ── graph ─────────────────────────────────────────────────────────────────────
 
 def load_graph() -> Graph:
     if not TTL.exists():
-        print("Context graph not found — run build_graph.py first.")
+        print("Context graph not found — run:  make build")
         sys.exit(1)
     g = Graph()
     g.parse(TTL, format="turtle")
     return g
 
 
-# ── tools ─────────────────────────────────────────────────────────────────────
+# ── tool definitions (Ollama / OpenAI schema) ─────────────────────────────────
 
 TOOLS = [
     {
-        "name": "get_ontology_schema",
-        "description": (
-            "Returns the ontology in Turtle format so the agent can discover "
-            "class names, properties, and SKOS concept URIs before writing SPARQL."
-        ),
-        "input_schema": {"type": "object", "properties": {}, "required": []},
+        "type": "function",
+        "function": {
+            "name": "get_ontology_schema",
+            "description": (
+                "Returns the ontology in Turtle format. "
+                "Call this first to discover class names, property URIs, "
+                "and SKOS concept URIs before writing any SPARQL."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
     },
     {
-        "name": "run_sparql",
-        "description": (
-            "Executes a SPARQL SELECT query against the insurance context graph. "
-            "Returns rows as a JSON list of dicts. "
-            "Use get_ontology_schema first to verify correct property URIs."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "A valid SPARQL SELECT query. Standard prefixes (ins:, data:, xsd:) are injected automatically.",
-                }
+        "type": "function",
+        "function": {
+            "name": "run_sparql",
+            "description": (
+                "Executes a SPARQL SELECT query against the insurance context graph. "
+                "Returns rows as a JSON list of dicts. "
+                "Standard prefixes ins:, data:, xsd: are injected automatically."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "A valid SPARQL SELECT query.",
+                    }
+                },
+                "required": ["query"],
             },
-            "required": ["query"],
         },
     },
 ]
 
+
+# ── tool implementations ───────────────────────────────────────────────────────
 
 def get_ontology_schema() -> str:
     return SCHEMA.read_text()
@@ -84,60 +96,52 @@ def run_sparql(graph: Graph, query: str) -> str:
         return json.dumps({"error": str(exc)})
 
 
+def dispatch(name: str, args: dict, graph: Graph) -> str:
+    if name == "get_ontology_schema":
+        return get_ontology_schema()
+    if name == "run_sparql":
+        return run_sparql(graph, args.get("query", ""))
+    return json.dumps({"error": f"unknown tool: {name}"})
+
+
 # ── agent loop ────────────────────────────────────────────────────────────────
 
 SYSTEM = """\
 You are an insurance analytics agent.
-You answer questions by querying an RDF knowledge graph via SPARQL.
-Always call get_ontology_schema first so you use correct URIs.
+Answer questions by querying an RDF knowledge graph via SPARQL.
+Always call get_ontology_schema first to verify correct property URIs.
 Incurred LR = (paid loss + case reserve) / earned premium.
 Ultimate LR adds IBNR to the numerator.
-Express ratios as percentages rounded to one decimal place in your final answer.
+Express ratios as percentages rounded to one decimal place.
 """
 
 
 def ask(question: str, graph: Graph) -> str:
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    messages = [{"role": "user", "content": question}]
+    messages = [
+        {"role": "system",  "content": SYSTEM},
+        {"role": "user",    "content": question},
+    ]
 
     while True:
-        response = client.messages.create(
-            model="claude-opus-4-5",
-            max_tokens=1024,
-            system=SYSTEM,
-            tools=TOOLS,
-            messages=messages,
-        )
+        response = ollama.chat(model=MODEL, messages=messages, tools=TOOLS)
+        msg = response.message
 
-        # collect any text blocks for the final answer
-        text_blocks = [b.text for b in response.content if b.type == "text"]
+        # no tool calls → final answer
+        if not msg.tool_calls:
+            return msg.content or "(no response)"
 
-        if response.stop_reason == "end_turn":
-            return "\n".join(text_blocks)
+        # append assistant turn
+        messages.append({"role": "assistant", "content": msg.content or "", "tool_calls": msg.tool_calls})
 
-        if response.stop_reason != "tool_use":
-            return "\n".join(text_blocks) or "(no response)"
-
-        # process tool calls
-        tool_results = []
-        for block in response.content:
-            if block.type != "tool_use":
-                continue
-            if block.name == "get_ontology_schema":
-                result = get_ontology_schema()
-            elif block.name == "run_sparql":
-                result = run_sparql(graph, block.input["query"])
-            else:
-                result = json.dumps({"error": f"unknown tool: {block.name}"})
-
-            tool_results.append({
-                "type": "tool_result",
-                "tool_use_id": block.id,
+        # process each tool call
+        for call in msg.tool_calls:
+            fn   = call.function
+            args = fn.arguments if isinstance(fn.arguments, dict) else json.loads(fn.arguments)
+            result = dispatch(fn.name, args, graph)
+            messages.append({
+                "role":    "tool",
                 "content": result,
             })
-
-        messages.append({"role": "assistant", "content": response.content})
-        messages.append({"role": "user",      "content": tool_results})
 
 
 # ── entry point ───────────────────────────────────────────────────────────────

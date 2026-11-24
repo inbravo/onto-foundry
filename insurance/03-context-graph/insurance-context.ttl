@@ -1,5 +1,6 @@
 @prefix ins: <http://ontology-foundry.io/insurance#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
@@ -79,6 +80,10 @@ ins:inceptionDate a owl:DatatypeProperty ;
 ins:numerator a owl:DatatypeProperty ;
     rdfs:domain ins:LossRatioRecord ;
     rdfs:range xsd:decimal .
+
+ins:partyId a owl:DatatypeProperty ;
+    rdfs:domain ins:Party ;
+    rdfs:range xsd:string .
 
 ins:policyId a owl:DatatypeProperty ;
     rdfs:domain ins:Policy ;
@@ -237,10 +242,10 @@ ins:ratioValue a owl:DatatypeProperty ;
     rdfs:range xsd:decimal .
 
 <http://ontology-foundry.io/insurance/data#P-INS-02> a ins:Party ;
-    ins:policyId "P-INS-02" .
+    ins:partyId "P-INS-02" .
 
 <http://ontology-foundry.io/insurance/data#P-INS-03> a ins:Party ;
-    ins:policyId "P-INS-03" .
+    ins:partyId "P-INS-03" .
 
 <http://ontology-foundry.io/insurance/data#POL-LIB-001> a ins:Policy ;
     ins:earnedPremium 600000.0 ;
@@ -264,7 +269,7 @@ ins:ratioValue a owl:DatatypeProperty ;
     ins:policyId "POL-PRP-001" .
 
 <http://ontology-foundry.io/insurance/data#P-INS-01> a ins:Party ;
-    ins:policyId "P-INS-01" .
+    ins:partyId "P-INS-01" .
 
 <http://ontology-foundry.io/insurance/data#POL-MAR-001> a ins:Policy ;
     ins:earnedPremium 1200000.0 ;
@@ -291,12 +296,12 @@ ins:LoB_Liability a ins:LineOfBusiness ;
 ins:LoB_Property a ins:LineOfBusiness ;
     skos:prefLabel "Property" .
 
+ins:LoB_Marine a ins:LineOfBusiness ;
+    skos:prefLabel "Marine" .
+
 ins:Party a owl:Class ;
     rdfs:label "Party" ;
     skos:definition "Any legal or natural person in an insurance contract." .
-
-ins:LoB_Marine a ins:LineOfBusiness ;
-    skos:prefLabel "Marine" .
 
 ins:LineOfBusiness a owl:Class ;
     rdfs:label "LineOfBusiness" .
@@ -305,6 +310,8 @@ ins:LossRatioVariant a owl:Class ;
     rdfs:label "LossRatioVariant" ;
     skos:definition "Distinguishes how losses and premiums are measured." .
 
+owl:Class rdfs:subClassOf rdfs:Class .
+
 ins:Policy a owl:Class ;
     rdfs:label "Policy" ;
     skos:definition "A contract of insurance between an insurer and an insured." .
@@ -312,6 +319,8 @@ ins:Policy a owl:Class ;
 ins:Claim a owl:Class ;
     rdfs:label "Claim" ;
     skos:definition "A formal request for payment under a policy." .
+
+owl:DatatypeProperty rdfs:subClassOf rdf:Property .
 
 ins:LossRatioRecord a owl:Class ;
     rdfs:label "LossRatioRecord" ;

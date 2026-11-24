@@ -66,6 +66,7 @@ ins:forLine a owl:ObjectProperty ;
 
 # ── Datatype properties ───────────────────────────────────────────────────────
 
+ins:partyId         a owl:DatatypeProperty ; rdfs:domain ins:Party          ; rdfs:range xsd:string .
 ins:policyId        a owl:DatatypeProperty ; rdfs:domain ins:Policy         ; rdfs:range xsd:string .
 ins:earnedPremium   a owl:DatatypeProperty ; rdfs:domain ins:Policy         ; rdfs:range xsd:decimal .
 ins:inceptionDate   a owl:DatatypeProperty ; rdfs:domain ins:Policy         ; rdfs:range xsd:date .

@@ -61,7 +61,7 @@ def build() -> Graph:
         # party
         p_uri = DATA[pol.insured.party_id]
         g.add((p_uri, RDF.type,        INS.Party))
-        g.add((p_uri, INS.policyId,    Literal(pol.insured.party_id)))  # re-uses prop for id
+        g.add((p_uri, INS.partyId,     Literal(pol.insured.party_id)))
         g.add((uri,   INS.hasInsured,  p_uri))
 
     # claims
