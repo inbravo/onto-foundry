@@ -34,7 +34,7 @@ Requires [Ollama](https://ollama.com) running locally. Pull a tool-capable model
 ollama pull qwen2.5
 ```
 
-### Option A — Make (recommended)
+### Using Make
 
 ```bash
 make install   # creates .venv and pip-installs requirements.txt
@@ -42,9 +42,7 @@ make build     # builds the context graph (.ttl)
 make run       # runs the agent with demo questions
 ```
 
-`make run` runs the full chain in one shot.
-
-### Option B — Manual venv
+### Manual venv
 
 ```bash
 python3 -m venv .venv
@@ -52,14 +50,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Then:
-
 ```bash
-python insurance/03-context-graph/build_graph.py   # build context graph
-python insurance/04-agent-query/agent.py            # run agent
+python insurance/03-context-graph/build_graph.py
+python insurance/04-agent-query/agent.py
 ```
 
-Or without activating:
+Without activating:
 
 ```bash
 .venv/bin/python insurance/03-context-graph/build_graph.py
@@ -74,7 +70,6 @@ Or without activating:
 
 ### Models
 
-Edit `MODEL` at the top of `insurance/04-agent-query/agent.py`.  
+Edit `MODEL` at the top of `insurance/04-agent-query/agent.py`.
 Models known to support tool calls: `qwen2.5`, `llama3.1`, `mistral-nemo`.
-
-If the model is not found the agent lists what is installed and exits.
+If the model isn't installed the agent lists what's available and exits.

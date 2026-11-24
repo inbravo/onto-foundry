@@ -1,12 +1,31 @@
 """
 Insurance domain model — core entities for loss ratio analysis.
 Covers: Party, Policy, Claim, LossRatioRecord.
+
+Usage:
+    from model import seed_data, Policy, Claim, LossRatioRecord
 """
+# ─────────────────────────────────────────────────────
+# Author   : Amit Dixit
+# GitHub   : https://github.com/inbravo
+# Web      : https://inbravo.github.io
+# LinkedIn : https://www.linkedin.com/in/inbravo/
+# ─────────────────────────────────────────────────────
 from __future__ import annotations
-from dataclasses import dataclass, field
+
+import logging
+import sys
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from enum import Enum
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
+import logging_config  # noqa: E402
+
+logging_config.setup()
+log = logging.getLogger("ontology.insurance.model")
 
 
 # ── enumerations ──────────────────────────────────────────────────────────────
@@ -89,12 +108,16 @@ class LossRatioRecord:
 # ── seed data ─────────────────────────────────────────────────────────────────
 
 def seed_data() -> tuple[list[Policy], list[Claim]]:
-    """Returns a small but realistic portfolio for three lines."""
+    """
+    Returns a small but realistic portfolio for three lines.
 
-    broker  = Party("P-BRK-01", "Marsh Ltd",         "Broker")
-    marine1 = Party("P-INS-01", "Acme Shipping Co",  "Insured")
+    Returns:
+        tuple: (list[Policy], list[Claim])
+    """
+    broker  = Party("P-BRK-01", "Marsh Ltd",          "Broker")
+    marine1 = Party("P-INS-01", "Acme Shipping Co",   "Insured")
     prop1   = Party("P-INS-02", "Riverside Warehouses","Insured")
-    liab1   = Party("P-INS-03", "TechCorp Ltd",       "Insured")
+    liab1   = Party("P-INS-03", "TechCorp Ltd",        "Insured")
 
     policies = [
         Policy("POL-MAR-001", marine1, LineOfBusiness.MARINE,
@@ -120,4 +143,5 @@ def seed_data() -> tuple[list[Policy], list[Claim]]:
               date(2026, 9, 15), Decimal("0"),       Decimal("0"),      Decimal("120_000")),
     ]
 
+    log.debug("seed_data: %d policies, %d claims", len(policies), len(claims))
     return policies, claims
