@@ -26,25 +26,55 @@ Domain model → ontology → context graph → agent query, by industry vertica
 04-agent-query/    agent.py   — Ollama tool-call: NL → SPARQL → answer
 ```
 
-## Quickstart
+## Setup
 
-Requires [Ollama](https://ollama.com) running locally with a tool-capable model:
+Requires [Ollama](https://ollama.com) running locally. Pull a tool-capable model first:
 
 ```bash
 ollama pull qwen2.5
 ```
 
+### Option A — Make (recommended)
+
 ```bash
-make run
+make install   # creates .venv and pip-installs requirements.txt
+make build     # builds the context graph (.ttl)
+make run       # runs the agent with demo questions
 ```
 
-`make run` creates the venv, installs deps, builds the context graph, and runs the agent.
+`make run` runs the full chain in one shot.
 
-To ask a custom question:
+### Option B — Manual venv
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Then:
+
+```bash
+python insurance/03-context-graph/build_graph.py   # build context graph
+python insurance/04-agent-query/agent.py            # run agent
+```
+
+Or without activating:
+
+```bash
+.venv/bin/python insurance/03-context-graph/build_graph.py
+.venv/bin/python insurance/04-agent-query/agent.py
+```
+
+### Custom question
 
 ```bash
 .venv/bin/python insurance/04-agent-query/agent.py "What is the net loss ratio for Property?"
 ```
 
-To change the model, edit `MODEL` at the top of `insurance/04-agent-query/agent.py`.
+### Models
+
+Edit `MODEL` at the top of `insurance/04-agent-query/agent.py`.  
 Models known to support tool calls: `qwen2.5`, `llama3.1`, `mistral-nemo`.
+
+If the model is not found the agent lists what is installed and exits.
